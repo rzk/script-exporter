@@ -128,7 +128,8 @@ func (sh *ScriptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		promhttp.Handler().ServeHTTP(w, r)
 	} else {
 		reschan := make(chan runresult)
-		ctx, _ := context.WithDeadline(r.Context(), time.Now().Add(sh.timeout))
+		ctx, cancel := context.WithDeadline(r.Context(), time.Now().Add(sh.timeout))
+		defer cancel()
 		sh.reqchan <- runreq{script: script, result: reschan, ctx: ctx}
 		result := <-reschan
 
@@ -164,7 +165,8 @@ func (sh *ScriptHandler) Start() {
 		go func() {
 			mRuns.WithLabelValues(req.script).Add(1)
 			start := time.Now()
-			ctx, _ := context.WithCancel(req.ctx)
+			ctx, cancel := context.WithCancel(req.ctx)
+			defer cancel()
 			output, err := runCommand(ctx, path.Join(sh.scriptPath, req.script))
 			elapsed := time.Since(start)
 			mDuration.WithLabelValues(req.script).Add(float64(elapsed) / float64(time.Second))
