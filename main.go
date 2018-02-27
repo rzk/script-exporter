@@ -161,7 +161,7 @@ func (sh *ScriptHandler) Start() {
 
 		mRunning.WithLabelValues(req.script).Add(1)
 
-		go func() {
+		go func(req runreq) {
 			mRuns.WithLabelValues(req.script).Add(1)
 			start := time.Now()
 			ctx, _ := context.WithCancel(req.ctx)
@@ -182,7 +182,7 @@ func (sh *ScriptHandler) Start() {
 			mRunning.WithLabelValues(req.script).Add(-1)
 
 			req.result <- runresult{output: output, err: err}
-		}()
+		}(req)
 	}
 }
 
